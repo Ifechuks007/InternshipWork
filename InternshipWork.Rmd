@@ -1,0 +1,383 @@
+---
+title: "Internship"
+author: "Ife"
+date: "9/17/2021"
+output: html_document
+---
+## Installations
+```{R}
+install.packages("readxl")
+install.packages("tidyverse")
+install.packages("stringr")
+install.packages("tigerstats")
+install.packages("descr")
+install.packages("arsenal")
+
+```
+##libraries
+```{r}
+library(stringr)
+library(tidyverse)
+library(readxl)
+library(tidyr)
+library(dplyr)
+library(tigerstats)
+library(descr)
+library(dplyr)
+library(ggplot2)
+library(scales)
+library(arsenal)
+```
+
+
+
+## read in data
+```{R}
+df<-read_excel("C:/Users/ifemo/Downloads/Quality Schools File_2019.xlsx",sheet = "Sheet1")
+ dfa<-read.csv("C:/Users/ifemo/Downloads/TrueElsifile.csv")## Elsi file with direct certification
+```
+##checking for duplicates
+```{R}
+df$district_schoolid<-paste(df$district_number,df$school_number)
+sum(duplicated(df$district_schoolid))
+```
+##Calculate ranges, and averages for the variables.
+```{R}
+##mean of final quality score
+df$final_quality_score <- as.numeric(df$final_quality_score)
+finalqs_mean <-mean(df$final_quality_score, na.rm=TRUE)
+##range 
+finalqs_range <- range(df$final_quality_score,na.rm=TRUE)
+##mean and range of direct certification
+dfa$Direct.Certification..Public.School..2018.19 <- as.numeric(dfa$Direct.Certification..Public.School..2018.19)
+dc_mean<-mean(dfa$Direct.Certification..Public.School..2018.19,na.rm=TRUE)
+dc_range<-range(dfa$Direct.Certification..Public.School..2018.19,na.rm=TRUE)
+##mean and range of Enrollment
+dfa$Total.Students.All.Grades..Excludes.AE...Public.School..2018.19<- as.numeric(dfa$Total.Students.All.Grades..Excludes.AE...Public.School..2018.19)
+enrollment_mean<-mean(dfa$Total.Students.All.Grades..Excludes.AE...Public.School..2018.19)
+enrollment_range <-range(dfa$Total.Students.All.Grades..Excludes.AE...Public.School..2018.19)
+##percentage of geographic locale
+table(dfa$Urban.centric.Locale..Public.School..2018.19)
+prop.table(table(dfa$Urban.centric.Locale..Public.School..2018.19))
+##mean and range of percent of non white students
+
+
+
+```
+##mean and range of enrollment of no
+
+## percentages 
+```{r}
+
+table(df$final_quality_score)
+prop.table(table(df$final_quality_score))
+```
+
+##Add a new variable for non white student percentage
+```{R}
+dfa$Total.Students.All.Grades..Excludes.AE...Public.School..2018.19 <- as.numeric(dfa$Total.Students.All.Grades..Excludes.AE...Public.School..2018.19)
+dfa$White.Students..Public.School..2018.19<- as.numeric(dfa$White.Students..Public.School..2018.19)
+dfa$non_white_student <- 1-(dfa$White.Students..Public.School..2018.19/dfa$Total.Students.All.Grades..Excludes.AE...Public.School..2018.19)
+nonwhite_mean <- mean(dfa$non_white_student, na.rm=TRUE)
+nonwhite_range<- range(dfa$non_white_student, na.rm = TRUE)
+```
+
+## Create new variable for last four digits of school id and state agency id
+
+```{R}
+dfa$school_number <- str_sub(dfa$State.School.ID..Public.School..2018.19,-4,-1)
+dfa$school_number <- as.numeric(dfa$school_number)
+dfa$district_number <- str_sub(dfa$State.Agency.ID..Public.School..2018.19,-5,-1)
+dfa$district_number <- as.numeric(dfa$district_number)
+
+maindf<-left_join(df,dfa)
+
+```
+##Check for missing values
+##is.na() gives you a vecctor of length whatever variable you are trying to find how many missing values with 1s for every entry that is missing. 
+## sum(is.na()) sums through the vector and that should give you the number of missing values.
+```{r}
+##How do I check for missing values for that are not numeric and I can't convert to numeric like urban centric.##For this you just make a table and then the table will display everything with that strange character.
+
+table(maindf$Urban.centric.Locale..Public.School..2018.19)
+##re-code
+maindf$Urban_centric_locale <- if_else(maindf$Urban.centric.Locale..Public.School..2018.19=='11-City: Large','City',if_else(maindf$Urban.centric.Locale..Public.School..2018.19=='13-City: Small','City',if_else(maindf$Urban.centric.Locale..Public.School..2018.19==	
+'12-City: Mid-size','City',if_else(maindf$Urban.centric.Locale..Public.School..2018.19=='21-Suburb: Large','Suburb',if_else(maindf$Urban.centric.Locale..Public.School..2018.19=='22-Suburb: Mid-size','Suburb',if_else(maindf$Urban.centric.Locale..Public.School..2018.19=='23-Suburb: Small','Suburb',if_else(maindf$Urban.centric.Locale..Public.School..2018.19=='31-Town: Fringe'|maindf$Urban.centric.Locale..Public.School..2018.19=='32-Town: Distant'|maindf$Urban.centric.Locale..Public.School..2018.19== '33-Town: Remote','Town',if_else(maindf$Urban.centric.Locale..Public.School..2018.19=='41-Rural: Fringe'|maindf$Urban.centric.Locale..Public.School..2018.19=='42-Rural: Distant'|maindf$Urban.centric.Locale..Public.School..2018.19=='43-Rural: Remote','Rural', if_else(maindf$Urban.centric.Locale..Public.School..2018.19=='', 'missing value','empty')))))))))
+table(maindf$Urban.centric.Locale..Public.School..2018.19,maindf$Urban_centric_locale)
+
+
+dfa$Direct.Certification..Public.School..2018.19 <- as.numeric(dfa$Direct.Certification..Public.School..2018.19)
+missingdc<- sum(is.na(dfa$Direct.Certification..Public.School..2018.19))
+sum(is.na(dfa$Latitude..Public.School..2018.19))
+sum(is.na(dfa$Longitude..Public.School..2018.19))
+sum(is.na(dfa$Total.Students.All.Grades..Excludes.AE...Public.School..2018.19))
+##for the native students variable R doesnt recognize the funky signs so it gives us that they are no missing values therefore we will have to replace does signs with NA in order to get the true count of missing entries in that variable.
+dfa<- dfa %>% mutate(American.Indian.Alaska.Native.Students..Public.School..2018.19=replace (American.Indian.Alaska.Native.Students..Public.School..2018.19, American.Indian.Alaska.Native.Students..Public.School..2018.19 == 'â€“', NA))
+mv_Nativeamerican <-sum(is.na(dfa$American.Indian.Alaska.Native.Students..Public.School..2018.19))
+##do same for Asian american students
+dfa<- dfa %>% mutate(Asian.or.Asian.Pacific.Islander.Students..Public.School..2018.19=replace (Asian.or.Asian.Pacific.Islander.Students..Public.School..2018.19, Asian.or.Asian.Pacific.Islander.Students..Public.School..2018.19 == 'â€“', NA))
+mv_asianamerican <- sum(is.na(dfa$Asian.or.Asian.Pacific.Islander.Students..Public.School..2018.19))
+##I am just going to do the same for every other group because I am not sure if they have NA or the symbol
+dfa<- dfa %>% mutate(Hispanic.Students..Public.School..2018.19=replace (Hispanic.Students..Public.School..2018.19, Hispanic.Students..Public.School..2018.19 == 'â€“', NA))
+mv_hispanic <- sum(is.na(dfa$Hispanic.Students..Public.School..2018.19))
+##Black 
+dfa<- dfa %>% mutate(Black.or.African.American.Students..Public.School..2018.19=replace (Black.or.African.American.Students..Public.School..2018.19, Black.or.African.American.Students..Public.School..2018.19 == 'â€“', NA))
+mv_black <-sum(is.na(dfa$Black.or.African.American.Students..Public.School..2018.19))
+##white students
+dfa<- dfa %>% mutate(White.Students..Public.School..2018.19=replace (White.Students..Public.School..2018.19, White.Students..Public.School..2018.19 == 'â€“', NA))
+mv_white <- sum(is.na(dfa$White.Students..Public.School..2018.19))
+##pacific islander
+dfa$Nat..Hawaiian.or.Other.Pacific.Isl..Students..Public.School..2018.19 <- as.numeric(dfa$Nat..Hawaiian.or.Other.Pacific.Isl..Students..Public.School..2018.19)
+mv_pacific<- sum(is.na(dfa$Nat..Hawaiian.or.Other.Pacific.Isl..Students..Public.School..2018.19))
+##multi-ethnic
+dfa$Two.or.More.Races.Students..Public.School..2018.19 <- as.numeric(dfa$Two.or.More.Races.Students..Public.School..2018.19)
+mv_multiethnic<- sum(is.na(dfa$Two.or.More.Races.Students..Public.School..2018.19))
+```
+
+##Descriptive statistics for the new file
+##Get how many schools are in placeas
+##quality scores
+```{r}
+mainfinalqs_mean <- mean(maindf$final_quality_score, na.rm= TRUE)
+mainfinalqs_range<-range(maindf$final_quality_score,na.rm= TRUE)
+table(maindf$final_quality_score)
+prop.table(table(maindf$final_quality_score))
+```
+##direct certificate
+```{r}
+maindc_mean <- mean(maindf$Direct.Certification..Public.School..2018.19, na.rm=TRUE)
+maindc_range <-range(maindf$Direct.Certification..Public.School..2018.19, na.rm = TRUE)
+```
+##mean and range of total enrollment
+```{r}
+mainenrollment_mean<-mean(maindf$Total.Students.All.Grades..Excludes.AE...Public.School..2018.19, na.rm=TRUE)
+mainenrollment_range<- range(maindf$Total.Students.All.Grades..Excludes.AE...Public.School..2018.19,na.rm=TRUE)
+```
+##percentage of geographic locale
+```{r}
+table(maindf$Urban.centric.Locale..Public.School..2018.19)
+prop.table(table(maindf$Urban.centric.Locale..Public.School..2018.19))
+```
+##percentage of charter schools
+```{r}
+table(maindf$Charter.School..Public.School..2018.19)
+prop.table(table(maindf$Charter.School..Public.School..2018.19))
+```
+##mean and range of nonwhite students percentage
+```{r}
+mean(maindf$non_white_student,na.rm=TRUE)
+range(maindf$non_white_student,na.rm=TRUE)
+```
+
+##Check for missing values for our mergedfile
+```{r}
+maindf$Direct.Certification..Public.School..2018.19 <- as.numeric(maindf$Direct.Certification..Public.School..2018.19)
+ sum(is.na(maindf$Direct.Certification..Public.School..2018.19))
+ sum(is.na(dfa$Latitude..Public.School..2018.19))
+sum(is.na(dfa$Longitude..Public.School..2018.19))
+sum(is.na(dfa$Total.Students.All.Grades..Excludes.AE...Public.School..2018.19))
+##Checking the ethnicities for issing values
+maindf$American.Indian.Alaska.Native.Students..Public.School..2018.19<- as.numeric(maindf$American.Indian.Alaska.Native.Students..Public.School..2018.19)
+sum(is.na(maindf$American.Indian.Alaska.Native.Students..Public.School..2018.19))
+##do same for Asian american students
+maindf$Asian.or.Asian.Pacific.Islander.Students..Public.School..2018.19<- as.numeric(maindf$Asian.or.Asian.Pacific.Islander.Students..Public.School..2018.19)
+sum(is.na(maindf$Asian.or.Asian.Pacific.Islander.Students..Public.School..2018.19))
+##I am just going to do the same for every other group because I am not sure if they have NA or the symbol
+maindf$Hispanic.Students..Public.School..2018.19<- as.numeric(maindf$Hispanic.Students..Public.School..2018.19)
+sum(is.na(maindf$Hispanic.Students..Public.School..2018.19))
+##Black 
+maindf$Black.or.African.American.Students..Public.School..2018.19<- as.numeric(maindf$Black.or.African.American.Students..Public.School..2018.19)
+sum(is.na(maindf$Black.or.African.American.Students..Public.School..2018.19))
+##white students
+maindf$White.Students..Public.School..2018.19<- as.numeric(maindf$White.Students..Public.School..2018.19)
+sum(is.na(maindf$White.Students..Public.School..2018.19))
+##pacific islander
+maindf$Nat..Hawaiian.or.Other.Pacific.Isl..Students..Public.School..2018.19 <- as.numeric(maindf$Nat..Hawaiian.or.Other.Pacific.Isl..Students..Public.School..2018.19)
+sum(is.na(maindf$Nat..Hawaiian.or.Other.Pacific.Isl..Students..Public.School..2018.19))
+##multi-ethnic
+maindf$Two.or.More.Races.Students..Public.School..2018.19<- as.numeric(maindf$Two.or.More.Races.Students..Public.School..2018.19)
+sum(is.na(maindf$Two.or.More.Races.Students..Public.School..2018.19))
+#Non-white student percentage
+maindf$non_white_student<- as.numeric(maindf$non_white_student)
+sum(is.na(maindf$non_white_student))
+```
+
+```{r}
+##Calculating total ethnicity.
+##Summing Coulumns together with na entries.
+ maindf<-maindf %>%
+  rowwise() %>%
+  mutate(
+    Total_ethnicities = sum(c(American.Indian.Alaska.Native.Students..Public.School..2018.19,Asian.or.Asian.Pacific.Islander.Students..Public.School..2018.19,Hispanic.Students..Public.School..2018.19, Black.or.African.American.Students..Public.School..2018.19,White.Students..Public.School..2018.19,Nat..Hawaiian.or.Other.Pacific.Isl..Students..Public.School..2018.19,Two.or.More.Races.Students..Public.School..2018.19),na.rm=TRUE))
+```
+```{r}
+maindf$enrollment_test <- if_else(maindf$Total.Students.All.Grades..Excludes.AE...Public.School..2018.19==maindf$Total_ethnicities,1,0)
+
+table(maindf$enrollment_test)  
+```
+
+
+##working with ggplot
+```{r}
+# Basic histogram of final quality score
+ggplot(maindf, aes(x=factor(final_quality_score),fill=factor(final_quality_score),stat="count" ))+ geom_bar()+theme_minimal()+ggtitle("Count of final quality scores")+labs(x="Final quality Score",y="Number of schools")+theme(plot.title = element_text(hjust = 0.5))+geom_text(aes(label=..count..),stat="count",vjust=-0.2)+scale_fill_manual("Final quality score", values = c("1" = "coral2", "2" = "olivedrab", "3" = "cyan3","4"="mediumorchid1"))
+```
+
+## Set up bins
+#Percentage students of color
+```{r}
+convert2perc = scales::percent_format(accuracy = 2)
+
+breaks <- c(0,0.2,0.4,0.6,0.8,1)
+#tags <- c("[0-0.2)","[0.2-0.4)", "[0.4-0.6)", "[0.6-0.8)", "[0.8-1)")
+tags <- c("[0-20%)","[20%-40%)", "[40%-60%)", "[60%-80%)", "[80%-100%)")
+group_tags <- cut(maindf$non_white_student, 
+                  breaks=breaks, 
+                  include.lowest=TRUE, 
+                  right=FALSE, 
+                  labels=tags)
+summary(group_tags)
+##I have questions here.
+ggplot(data = as_tibble(group_tags), mapping = aes(x=value,fill=value)) + 
+  geom_bar(fill="blue",color="white",alpha=0.4) + 
+  stat_count(geom="text", aes(label=convert2perc(..count../length(group_tags))), vjust=-0.5) +
+  labs(x='Percentage of students of color',y="Number of schools") +
+  theme_minimal() +ggtitle("Percentage of students of color")+theme(plot.title = element_text(hjust = 0.5))
+ggplot(maindf, aes(x=non_white_student)) + geom_histogram(fill="blue",color="white",alpha=0.4)+labs(x='percentage of students of color',y='Number of Schools')+theme_minimal()+ggtitle("Percentage of students of color")+theme(plot.title = element_text(hjust = 0.5))
+
+
+```
+##This did not work, I am not sure why.
+##```{r}
+## breaks <- c(0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,0.1)
+# specify interval/bin labels
+##tags <- c("[0-0.1)","[0.1-0.2)", "[0.2-0.3)", "[0.3-0.4)", "[0.4-0.5)", "[0.5-0.6)","[0.6-0.7)", "[0.7-0.8)","[0.8-0.9)", "[0.9-1)")
+# bucketing values into bins
+##group_tags <- cut(maindf$non_white_student, 
+                  breaks=breaks, 
+                  include.lowest=TRUE, 
+                  right=FALSE, 
+                  labels=tags)
+# inspect bins
+##summary(group_tags)
+
+
+
+##Scatter plot between X=Direct certification and Y=quality school.
+```{r}
+ggplot(maindf, mapping=aes(x=(Direct.Certification..Public.School..2018.19)/(Total.Students.All.Grades..Excludes.AE...Public.School..2018.19), y=final_quality_score))+geom_point()+theme_minimal()+
+  geom_smooth(method='lm')+labs(y="final quality scores",x="percentage of students in direct certification program")+ggtitle("Relationship between final quality score and percentage of students in direct certification programs")
+
+```
+##Bar chart for the geographic locale of the schools.
+```{r}
+# Barchar
+
+ggplot(maindf, aes(x=Urban_centric_locale,y=Total.Students.All.Grades..Excludes.AE...Public.School..2018.19,fill=Urban_centric_locale)) + geom_bar(stat='identity',na.rm = TRUE)+theme_minimal()+labs(x='Urban locale',y='Total number of students in schools in each Urban locale',fill="Urban Locale")+ scale_y_continuous(labels = comma)+ggtitle("Number of students in each Geographic Locale")+theme(plot.title = element_text(hjust = 0.8))+geom_text(aes(label=Total.Students.All.Grades..Excludes.AE...Public.School..2018.19))
+
+
+ggplot(maindf, aes(x=Urban_centric_locale,fill=Urban_centric_locale))+geom_bar()+labs(x= 'Urban locale',y="Number of schools",fill = "Urban locale")+theme_minimal()+ggtitle("Number of schools in each geographic Locale")+theme(plot.title = element_text(hjust = 0.5))+geom_text(aes(label=..count..),stat="count",vjust=-0.2)
+```
+
+
+
+```{r}
+# Data frame
+
+maindf$quality_school_indicator <-  if_else(is.na(maindf$final_quality_score),"No Quality Label",if_else(maindf$final_quality_score>2,"Quality School","Not A Quality School"))
+table(maindf$quality_school_indicator,maindf$final_quality_score,useNA = "always")
+
+quality_school_enrollment<-subset(maindf,quality_school_indicator==0)
+## I could not get xtabs to add in the state agency id with the district name
+xtabs(Total.Students.All.Grades..Excludes.AE...Public.School..2018.19~district_name+quality_school_indicator+State.Agency.ID..Public.School..2018.19,data=maindf)
+xtabs(Total.Students.All.Grades..Excludes.AE...Public.School..2018.19~State.Agency.ID..Public.School..2018.19+quality_school_indicator,data=maindf)
+#Qs <- as.data.frame.matrix((rowPerc(xtabs(Total.Students.All.Grades..Excludes.AE...Public.School..2018.19~district_name+quality_school_indicator+State.Agency.ID..Public.School..2018.19,data=maindf))))
+Qs2 <- as.data.frame.matrix((rowPerc(xtabs(Total.Students.All.Grades..Excludes.AE...Public.School..2018.19~State.Agency.ID..Public.School..2018.19+quality_school_indicator,data=maindf))))
+Qs<-rownames_to_column(Qs)
+Qs <-rename(Qs,"district_name"="rowname")
+Qs2<- rownames_to_column(Qs2)
+Qs2 <-rename(Qs2,"State.Agency.ID..Public.School..2018.19"="rowname")
+maindf$State.Agency.ID..Public.School..2018.19
+ddfa<- left_join(Qs,ddf)
+
+```
+
+```{r}
+TSD2 <-aggregate(Total.Students.All.Grades..Excludes.AE...Public.School..2018.19 ~ district_name + State.Agency.ID..Public.School..2018.19, data = maindf, FUN = sum, na.rm = TRUE)
+NS<-aggregate(maindf$school_name, by = list(maindf$district_name + maindf$State.Agency.ID..Public.School..2018.19), FUN = length)
+NS2<- aggregate(school_name ~ district_name + State.Agency.ID..Public.School..2018.19, data = maindf, FUN = length)
+colnames(NS)[1] <- "district_name"
+colnames(NS)[2] <-"number of schools"
+colnames(NS2)[3] <-"number_of_schools"
+ddf<-merge(TSD,NS,by="district_name")
+ddf2<- left_join(TSD2,NS2)
+ddfa<-mer(Qs,ddf,by="district_name")
+typeof(ddf)
+typeof(Qs)
+library(tibble)
+
+
+
+
+```
+
+```{r}
+#Import district level file
+dl_file <- read.csv("C:/Users/ifemo/Downloads/Elsi_District level.csv")
+typeof(dl_file)
+#rename the columns 
+dl_file <- setNames(dl_file, c("district_name","State_name","Urban_centric_locale","District_Longitude","District_Latitude","State.Agency.ID..Public.School..2018.19"))
+
+#recode for the urban centric locale levels
+dl_file$Urban_centric_locale <- if_else(dl_file$Urban_centric_locale=='11-City: Large','City',if_else(dl_file$Urban_centric_locale=='13-City: Small','City',if_else(dl_file$Urban_centric_locale==	
+'12-City: Mid-size','City',if_else(dl_file$Urban_centric_locale=='21-Suburb: Large','Suburb',if_else(dl_file$Urban_centric_locale=='22-Suburb: Mid-size','Suburb',if_else(dl_file$Urban_centric_locale=='23-Suburb: Small','Suburb',if_else(dl_file$Urban_centric_locale=='31-Town: Fringe'|dl_file$Urban_centric_locale=='32-Town: Distant'|dl_file$Urban_centric_locale== '33-Town: Remote','Town',if_else(dl_file$Urban_centric_locale=='41-Rural: Fringe'|dl_file$Urban_centric_locale=='42-Rural: Distant'|dl_file$Urban_centric_locale=='43-Rural: Remote','Rural', if_else(dl_file$Urban_centric_locale=='', 'missing value','empty')))))))))
+
+dl_file=subset(dl_file,select=-c(District_Longitude,District_Latitude))
+
+```
+
+```{r}
+## join ddf2 and QS2
+ddfa2=ddf2 %>% left_join(Qs2, by="State.Agency.ID..Public.School..2018.19") ##perfect
+
+
+
+```
+
+```{r}
+##join ddfa2 and dl_file
+District_file=ddfa2 %>% left_join(dl_file, by="State.Agency.ID..Public.School..2018.19")
+```
+
+
+
+```{r}
+##create map
+install.packages("leaflet")
+library(leaflet)
+```
+
+```{r}
+m <- leaflet(maindf) %>%
+  addTiles() %>% 
+  addMarkers(~maindf$Longitude..Public.School..2018.19,~maindf$Latitude..Public.School..2018.19,popup= ~as.character(school_name),label= ~as.character(school_name))
+m
+```
+
+```{r}
+#Suburb
+suburb <-filter(District_file, Urban_centric_locale=="Suburb")
+#City
+City <-filter(District_file, Urban_centric_locale=="City")
+#Rural
+Rural <- filter(District_file, Urban_centric_locale=="Rural")
+#Town
+Town <- filter(District_file, Urban_centric_locale=="Town")
+
+
+```
+
+
+
+
+
